@@ -1,0 +1,286 @@
+grammar org.xtext.ex
+
+=======================================================================================================================================
+
+
+grammar org.xtext.example.mydsl.MyDsl with org.eclipse.xtext.common.Terminals
+
+generate saturn "http://www.xtext.org/example/iotlan/Iotlan"
+
+// A parsing Rule must be first always in Xtext
+Model: (mainRule+=Type)*;
+
+
+
+// Lexer definition: Here we put the words we are going to use in Saturn DSL
+
+
+terminal FLOAT: INT+'.'INT+;
+terminal PLUS: '+';
+terminal MINUS: '-';
+terminal MULTI: '*';
+terminal DIV: '/';
+terminal LPAREN: '(';
+terminal RPAREN: ')';
+terminal ASSIGN: '=';
+terminal ON: 'on';
+terminal OFF:'off';
+terminal IFSATEMENT: 'if';
+terminal SO: 'so';
+terminal REP: 'rep';
+terminal EVENT: 'event';
+terminal AND: 'and';
+terminal OR: 'or';
+terminal COMPARATION: '==';
+terminal LARGERTHAN: '>';
+terminal SMALLERTHAN: '<';
+terminal EQUALLARGER: '<=';
+terminal EQUALSMALLER: '>=';
+terminal NEWLINE: 'rn' | 'r' | 'n' ;
+terminal IPV6: 	('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'
+	  			('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'   
+				('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'
+				('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9');
+				
+
+
+// Parser Grammar: Here we define the sentences we are going to use in Saturn DSL
+Type: Statement | {Type} NEWLINE;
+
+Statement:  Declaration 
+		  | Assignment
+		  | Expression
+		  | IfStatement
+		  | RepStatement
+		  | EventStatement;
+
+
+Declaration: Device | Place | ComVar;
+
+Device:  /* IoT Devices and Place declaration */
+		'device' name+=ID (',' name+=ID)* ;
+			  
+Place: 'place' name+=ID (',' name+=ID)* ;
+	    
+ComVar:  /* common variables  declaration */
+		name+=ID (',' name+=ID)*
+		;
+
+Assignment:  /* IoT Devices and Place assignment*/
+			Type=[Device] ASSIGN address+=IPV6
+	       // |Type=[ComVar] ASSIGN values+=(STRING | INT | FLOAT)
+	       
+;
+
+Expression:    left=[Expression]  	operator+=DIV | operator+=MULTI right+=[Expression]
+			   |left=[Expression]   operator+=PLUS | operator+=MINUS right+=[Expression]
+			   |LPAREN Expression RPAREN
+			   |type=[Expression] ID
+			   |MINUS Expression
+			   |type=[Expression] INT
+			   |type=[Expression] FLOAT
+;
+
+
+
+IfStatement: IFSATEMENT Condition SO '{'   children+= Statement
+	    
+ '}';
+
+Condition: left+=[ComVar] operator+=COMPARATION | operator+=LARGERTHAN | operator+=SMALLERTHAN | operator+=EQUALSMALLER | operator+=EQUALLARGER right+=[ComVar] ( (AND | OR) (left+=[ComVar] operator+=COMPARATION | operator+=LARGERTHAN | operator+=SMALLERTHAN | operator+=EQUALSMALLER | operator+=EQUALLARGER) right+=[ComVar])*			| left+=[ComVar] operator+=(COMPARATION | LARGERTHAN | SMALLERTHAN | EQUALSMALLER | EQUALLARGER) right+=[ComVar] (OR (left+=[ComVar] operator+=(COMPARATION | LARGERTHAN | SMALLERTHAN | EQUALSMALLER | EQUALLARGER) right+=[ComVar]))*
+			| {Condition} '1' | {Condition} '0'; 
+
+RepStatement : REP name+=ID | name2+=[ComVar] 'till' repCon+=[Condition] '{' childrenRep+= Statement'}';
+
+EventStatement: EVENT name+=ID '{' enventStatement+=SmartFun'}';
+
+SmartFun:               type=[Device]'.'(ON | OFF)
+                        | 'Add' even=[EventStatement] 'to' type=[Place]
+                        | IFSATEMENT type=[Device]'.info' (COMPARATION | LARGERTHAN | SMALLERTHAN | EQUALSMALLER | EQUALLARGER) 
+                         'than' INT ('%')? '{' type2=[Place] '.' event=[EventStatement];
+
+
+
+
+
+==================================================================================================================================
+
+
+Model: (mainRule+=Statement)+;
+
+
+
+// Lexer definition: Here we put the words we are going to use in Saturn DSL
+
+
+terminal FLOAT: INT+'.'INT+;
+terminal PLUS: '+';
+terminal MINUS: '-';
+terminal MULTI: '*';
+terminal DIV: '/';
+terminal ASSIGN: '=';
+terminal LPAREN: '(';
+terminal RPAREN: ')';
+terminal COMPARATION: '==';
+terminal LARGERTHAN: '>';
+terminal SMALLERTHAN: '<';
+terminal EQUALLARGER: '<=';
+terminal EQUALSMALLER: '>=';
+terminal NEWLINE: 'rn' | 'r' | 'n' ;
+terminal IPV6: 	('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'
+	  			('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'   
+				('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'
+				('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9');
+				
+
+
+// Parser Grammar: Here we define the sentences we are going to use in Saturn DSL
+
+Statement:
+		  (devices+=Device)+
+		  |(places+=Place)+
+		  |(vars+=ComVar)+
+		  | Assignment
+		  | Expression
+		  | IfStatement
+		  | RepStatement
+		  | EventStatement
+		  | OtherStatements;
+
+
+Device:  /* IoT Devices and Place declaration */
+		'device' name+=ID (',' name+=ID)* ;
+			  
+Place: 'place' name+=ID (',' name+=ID)* ;
+	    
+ComVar:  /* common variables  declaration */
+		name+=ID (',' name+=ID)*;
+
+Assignment:  /* IoT Devices and Place assignment*/
+			Type=[Device] ASSIGN address+=IPV6
+	        |Type=[ComVar] ASSIGN valueS+= STRING
+	        |Type=[ComVar] ASSIGN valueI+= INT 
+	        |Type=[ComVar] ASSIGN valueF+= FLOAT;
+
+Expression:    left=[Expression]  	operator+=DIV | operator+=MULTI right+=[Expression]
+			   |left=[Expression]   operator+=PLUS | operator+=MINUS right+=[Expression]
+			   |LPAREN Expression RPAREN
+			   |type=[Expression] ID
+			   |MINUS {Expression}
+			   | atom+=INT 
+			   | atom2+=FLOAT
+;
+
+
+
+IfStatement: 'if' Condition 'so' '{'   children+= Statement
+	    
+ '}';
+
+Condition: left+=[ComVar] (operator+=COMPARATION | operator+=LARGERTHAN | operator+=SMALLERTHAN | operator+=EQUALSMALLER | operator+=EQUALLARGER ) right+=[ComVar] ( ('and' | 'or') left+=[ComVar] (operator+=COMPARATION | operator+=LARGERTHAN | operator+=SMALLERTHAN | operator+=EQUALSMALLER | operator+=EQUALLARGER) right+=[ComVar])*		
+			| type+='1' | type2+='0'; 
+
+RepStatement : 'rep' name+=ID | name2+=[ComVar] 'till' repCon+=[Condition] '{' childrenRep+= Statement'}';
+
+EventStatement: 'event' name+=ID LPAREN (ID (',' ID)?)?  RPAREN '{' (enventStatement+=Order)+'}';
+
+Order:               type=[Device]'.' 'on'
+	                 |type=[Device]'.''off'
+	                 |{Order} 'wait' INT ('sec'| 'min');
+
+OtherStatements:  'Add' even=[EventStatement] 'to' type=[Place]
+                        | 'if' type=[Device]'.info' (COMPARATION | LARGERTHAN | SMALLERTHAN | EQUALSMALLER | EQUALLARGER) 
+                         'than' INT ('%')? '{' type2=[Place] '.' event=[EventStatement] '}';
+
+
+
+
+org.xtext.example.DSLProject
+
+
+
+================================================================================
+Model: (mainRule+=Statements);
+
+
+
+// Lexer definition: Here we put the words we are going to use in Saturn DSL
+
+
+terminal FLOAT: INT+'.'INT+;
+terminal PLUS: '+';
+terminal MINUS: '-';
+terminal MULTI: '*';
+terminal DIV: '/';
+terminal ASSIGN: '=';
+terminal LPAREN: '(';
+terminal RPAREN: ')';
+terminal COMPARATION: '==';
+terminal LARGERTHAN: '>';
+terminal SMALLERTHAN: '<';
+terminal EQUALLARGER: '<=';
+terminal EQUALSMALLER: '>=';
+terminal NEWLINE: 'rn' | 'r' | 'n' ;
+terminal IPV6: 	('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'
+	  			('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'   
+				('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')':'
+				('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9')('a'..'f'|'A'..'F'|'0'..'9');
+				
+
+
+// Parser Grammar: Here we define the sentences we are going to use in Saturn DSL
+
+Statements:
+		   (dev+=Device)*
+		  |Place
+		  |ComVar
+		  | Assignment
+		  | Expression
+		  | IfStatement
+		  | RepStatement
+		  | EventStatement
+		  | OtherStatements;
+
+
+Device:  /* IoT Devices and Place declaration */
+		'device' name+=ID;
+			  
+Place: 'place' name+=ID (',' name+=ID)* ;
+	    
+ComVar:  /* common variables  declaration */
+		name+=ID (',' name+=ID)*;
+
+Assignment:  /* IoT Devices and Place assignment*/
+			 typeDev=[Device] ASSIGN address+=IPV6 | typeDev=[Device] ASSIGN address+=STRING	
+	         typeVar=[ComVar] ASSIGN valueS+= STRING
+	        |typeVar=[ComVar] ASSIGN valueI+= INT 
+	        |typeVar=[ComVar] ASSIGN valueF+= FLOAT;
+
+Expression:    left=[Expression]  	operator+=DIV | operator+=MULTI right+=[Expression]
+			   |left=[Expression]   operator+=PLUS | operator+=MINUS right+=[Expression]
+			   |LPAREN Expression RPAREN
+			   |type=[Expression] ID
+			   |MINUS {Expression}
+			   | atom+=INT 
+			   | atom2+=FLOAT
+;
+
+
+
+IfStatement: 'if' Condition 'so' '{'   children+=Statements  '}';
+
+Condition: left+=[ComVar] (operator+=COMPARATION | operator+=LARGERTHAN | operator+=SMALLERTHAN | operator+=EQUALSMALLER | operator+=EQUALLARGER ) right+=[ComVar] ( ('and' | 'or') left+=[ComVar] (operator+=COMPARATION | operator+=LARGERTHAN | operator+=SMALLERTHAN | operator+=EQUALSMALLER | operator+=EQUALLARGER) right+=[ComVar])*		
+			| type+='1' | type2+='0'; 
+
+RepStatement : 'rep' name+=ID | name2+=[ComVar] 'till' repCon+=[Condition] '{' childrenRep+= Statements'}';
+
+EventStatement: 'event' name+=ID LPAREN (ID (',' ID)?)?  RPAREN '{' (enventStatement+=Order)+'}';
+
+Order:                type=[Device]'.''on'
+	                 |type=[Device]'.''off'
+	                 |'wait' INT ('sec'| 'min');
+
+OtherStatements:  'Add' even=[EventStatement] 'to' type=[Place]
+                        | 'if' type=[Device]'.info' (COMPARATION | LARGERTHAN | SMALLERTHAN | EQUALSMALLER | EQUALLARGER) 
+                         'than' INT ('%')? '{' type2=[Place] '.' event=[EventStatement] '}';
+ 
